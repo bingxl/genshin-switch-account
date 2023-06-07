@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
 
 	"gopkg.in/ini.v1"
 )
@@ -17,19 +18,22 @@ type ConfigT struct {
 	Game       string `json:"game"`
 }
 
-var exePath, _ = os.Executable()
-var currentPath = filepath.Dir(exePath)
-
 type Lib struct {
 	Config      *ConfigT
 	Regs        []string
 	CurrentPath string
 	Log         func(...string)
+	regKey      string
 }
 
 func (lib *Lib) Init() {
+	var exePath, _ = os.Executable()
+	lib.CurrentPath = filepath.Dir(exePath)
+	lib.regKey = "HKCU\\Software\\miHoYo\\原神"
+
 	lib.readConfig()
 	lib.readRegs()
+
 }
 
 // 读取配置文件
@@ -69,11 +73,21 @@ func (lib *Lib) SaveConfig() {
 
 // 获取注册表列表
 func (lib *Lib) readRegs() {
-	matchs, err := filepath.Glob(filepath.Join(currentPath, "./reg/*.reg"))
+	matchs, err := filepath.Glob(filepath.Join(lib.CurrentPath, "./reg/*.reg"))
 	if err != nil {
 		lib.logInfo("读取注册表文件出错", err)
 	}
 	lib.Regs = matchs
+}
+
+// 导出注册表到
+func (lib *Lib) Export(file string) {
+	err := lib.RunCommand("reg", "export", lib.regKey, file, "/y")
+	if err != nil {
+		lib.logInfo("导出注册表失败", err)
+	} else {
+		lib.logInfo("导出注册表成功")
+	}
 }
 
 // 更新游戏配置文件
@@ -124,12 +138,13 @@ func (lib *Lib) serverConfig(serverName byte) {
 
 // 流程处理
 func (lib *Lib) ChangeAccount(reg string) {
+	lib.logInfo("changeAccount 接收到：", reg)
 	server := filepath.Base(reg)[0]
-	// TODO 依据 server 将 config 写入文件系统
 	lib.serverConfig(server)
+
 	// 执行注册表导入
-	importreg := exec.Command("reg", "import", reg)
-	if err := importreg.Run(); err != nil {
+	err := lib.RunCommand("reg", "import", reg)
+	if err != nil {
 		lib.logInfo("导入注册表失败", err)
 	} else {
 		lib.logInfo("导入注册表成功", reg)
@@ -140,7 +155,7 @@ func (lib *Lib) ChangeAccount(reg string) {
 // 将 B 服SDK复制到指定位置
 func (lib *Lib) cpBiliBiliSDK() {
 	// 将sdk移动到对应位置， 此sdk为b服专有
-	sourcePath := filepath.Join(currentPath, "./source/PCGameSDK.dll")
+	sourcePath := filepath.Join(lib.CurrentPath, "./source/PCGameSDK.dll")
 	targetPath := filepath.Join(lib.Config.GamePath, "YuanShen_Data", "Plugins", "PCGameSDK.dll")
 	content, err := os.ReadFile(sourcePath)
 	if err != nil {
@@ -160,21 +175,36 @@ func (lib *Lib) cpBiliBiliSDK() {
 func (lib *Lib) logInfo(args ...interface{}) {
 	s := ""
 	for _, arg := range args {
-		s += fmt.Sprintln(arg)
+		s += fmt.Sprintf("%+v", arg)
 	}
 	if lib.Log != nil {
 		lib.Log(s)
 	}
-	// fmt.Println(s)
+	fmt.Println(s)
 
 }
 
+// 开始游戏
 func (lib *Lib) StartGame() {
-	start := exec.Command("runas", "/user:Administrator", lib.Config.Game)
-	if err := start.Start(); err != nil {
+
+	cmd := exec.Command(lib.Config.Game)
+	if err := cmd.Start(); err != nil {
 		lib.logInfo("游戏启动失败", err)
 		return
 	}
-
+	// cmd.Wait()
 	lib.logInfo("游戏启动中")
+
+}
+
+// 运行命令
+func (lib *Lib) RunCommand(args ...string) error {
+
+	cmd := exec.Command(args[0], args[1:]...)
+
+	// exe执行时会启动一个终端，不隐藏 Window 时会有终端闪现
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+
+	return cmd.Run()
+
 }
