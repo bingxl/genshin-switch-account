@@ -96,8 +96,6 @@ func (lib *Lib) serverConfig(serverName byte) {
 	switch serverName {
 	case 'b':
 		modify = [3]string{"14", "bilibili", "0"}
-		// 将B服专用SDK复制到游戏目录下
-		lib.cpBiliBiliSDK()
 	case 'g':
 		modify = [3]string{"1", "mihoyo", "1"}
 
@@ -105,6 +103,8 @@ func (lib *Lib) serverConfig(serverName byte) {
 		lib.logInfo("暂不支持的server", serverName)
 		return
 	}
+	// 将B服专用SDK复制到游戏目录下
+	lib.cpBiliBiliSDK(serverName != 'b')
 
 	changes := map[string]string{
 		"channel":     modify[0],
@@ -122,8 +122,19 @@ func (lib *Lib) serverConfig(serverName byte) {
 
 	// 获取或设置配置项的值
 	section := cfg.Section("General")
+
+	// 读取的配置和将要写入的配置是否相同
+	hasDiff := false
 	for k, v := range changes {
+		if section.Key(k).String() != v {
+			hasDiff = true
+		}
 		section.Key(k).SetValue(v)
+	}
+
+	// 配置文件与将要写入的内容没有不同，则直接返回
+	if !hasDiff {
+		return
 	}
 
 	// 保存 INI 文件
@@ -152,21 +163,35 @@ func (lib *Lib) ChangeAccount(reg string) {
 
 }
 
-// 将 B 服SDK复制到指定位置
-func (lib *Lib) cpBiliBiliSDK() {
+// 目标为 B 服时如果游戏目录下没有SDK则拷贝SDK，为官服时若游戏目录下有 SDK 则删除
+func (lib *Lib) cpBiliBiliSDK(remove bool) {
 	// 将sdk移动到对应位置， 此sdk为b服专有
 	sourcePath := filepath.Join(lib.CurrentPath, "./source/PCGameSDK.dll")
 	targetPath := filepath.Join(lib.Config.GamePath, "YuanShen_Data", "Plugins", "PCGameSDK.dll")
-	content, err := os.ReadFile(sourcePath)
-	if err != nil {
-		// 读取错误处理
-		lib.logInfo("读取./source/PCGameSDK.dll SDK文件失败", err)
+
+	// 判断文件是否存在
+	_, err := os.Stat(targetPath)
+	sdkHasExist := err == nil
+
+	if remove && sdkHasExist {
+		os.Remove(targetPath)
+		return
 	}
-	err = os.WriteFile(targetPath, content, 0755)
-	if err != nil {
-		// 写文件出错处理
-		lib.logInfo("SDK 写入游戏目录失败", err)
+
+	// 需要copy SDK 且 SDK 不存在
+	if !remove && !sdkHasExist {
+		content, err := os.ReadFile(sourcePath)
+		if err != nil {
+			// 读取错误处理
+			lib.logInfo("读取./source/PCGameSDK.dll SDK文件失败", err)
+		}
+		err = os.WriteFile(targetPath, content, 0755)
+		if err != nil {
+			// 写文件出错处理
+			lib.logInfo("SDK 写入游戏目录失败", err)
+		}
 	}
+
 	lib.logInfo(targetPath)
 
 }
