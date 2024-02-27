@@ -21,3 +21,11 @@ export function ImportReg(arg1) {
 export function SelectGameFile() {
   return window['go']['main']['App']['SelectGameFile']();
 }
+
+export function StartGame() {
+  return window['go']['main']['App']['StartGame']();
+}
+
+export function StartGis(arg1) {
+  return window['go']['main']['App']['StartGis'](arg1);
+}

@@ -10,3 +10,7 @@ export function GetRegs():Promise<Array<string>>;
 export function ImportReg(arg1:string):Promise<void>;
 
 export function SelectGameFile():Promise<boolean>;
+
+export function StartGame():Promise<void>;
+
+export function StartGis(arg1:string):Promise<void>;

@@ -6,13 +6,16 @@
 
 ## 使用方法
 
-1. 到[release](https://github.com/bingxl/genshin-switch-account/releases) 页面下载 对应版本的`genshin-switch.exe` 和 `PCGameSDK.dll`文件;
-2.  右键点击 genshin-switch.exe 以管理员身份运行；（右键->属性->兼容性， 勾选以管理员身份运行此程序 后双击就可以以管理员身份运行）;
-3. 在界面里点击选择游戏路径，选择具体的游戏文件名;
-4. 可选步骤 (如果需要在B服官服之间切换时 执行) 将下载的 `PCGameSDK.dll`文件移动到 用户主目录下的 `genshin-switch`文件夹中;
-5. 运行游戏登录账号，然后将注册表导出到本项目的 reg 文件夹下，命名格式为 `g-xxxx.reg`或者 `b-xxxx.reg`，其中xxxx自由输入，建议和和自己的账号关联 `g`开头 表示官服账号， `b`开头为 B 服账号；
-6. 点击需要切换的账号；  
+- 到[release](https://github.com/bingxl/genshin-switch-account/releases) 页面下载 对应版本的`genshin-switch.exe` 和 `PCGameSDK.dll`文件;
 
+- 在界面里点击选择游戏路径，选择具体的游戏文件名;
+- 可选步骤 (如果需要在B服官服之间切换时 执行) 将下载的 `PCGameSDK.dll`文件移动到 用户主目录下的 `genshin-switch`文件夹中;
+- 运行游戏登录账号，然后将注册表导出到本项目的 reg 文件夹下，命名格式为 `g-xxxx.reg`或者 `b-xxxx.reg`，其中xxxx自由输入，建议和和自己的账号关联 `g`开头 表示官服账号， `b`开头为 B 服账号；
+- 选择需要切换的账号, 点击切换账号, 点击运行游戏
+
+
+## 可选功能
+- 运行游戏后启动 [GIS](https://github.com/phonowell/genshin-impact-script), 需要手动[下载](https://github.com/phonowell/genshin-impact-script/releases)解压后输入 GIS.exe 的位置
 
 ## 导出注册表方法
 有多种方法导出注册表：

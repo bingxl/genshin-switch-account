@@ -83,3 +83,16 @@ func (a *App) ImportReg(regName string) {
 	}
 	a.lib.ChangeAccount(regName)
 }
+
+// 启动游戏
+func (a *App) StartGame() {
+	a.lib.StartGame()
+}
+
+// 启动 GIS
+func (a *App) StartGis(gisPath string) {
+	if gisPath == "" {
+		return
+	}
+	a.lib.StartGis(gisPath)
+}

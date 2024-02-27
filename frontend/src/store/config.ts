@@ -4,16 +4,25 @@ import { persist } from 'zustand/middleware';
 import { GetGameFile, GetRegs } from '@go/main/App';
 
 
-type configState = {
+interface configState {
+    // 游戏可执行路径
     game: string;
+    // 导出的注册表列表
     regs: string[];
-}
+    // GIS 可执行路径
+    gisPath: string;
+    // 启动游戏后是否启动 GIS
+    startGis: boolean;
 
-type configAction = {
+
     flush: () => Promise<void>;
+    setGisPath: (gisPath: string) => void;
+    setStartGis: (startGis: boolean) => void;
 }
 
-export const useConfig = create<configState & configAction>()(
+
+
+export const useConfig = create<configState>()(
     persist((set) => {
 
         const flush = async () => {
@@ -29,9 +38,13 @@ export const useConfig = create<configState & configAction>()(
         return {
             game: '',
             regs: [],
+            gisPath: "",
+            startGis: false,
 
             // 从golang 中获取参数
             flush,
+            setGisPath: gisPath => set({ gisPath }),
+            setStartGis: startGis => set({ startGis }),
         }
     },
         { name: "config-store" }
@@ -53,7 +66,7 @@ export const useLogStore = create<LogeI>()((set, get) => {
             if (Array.isArray(logs)) {
                 info = logs.reduce((pre, cur) => `${pre}\n${cur}`);
             }
-            set({ logs: [...get().logs, info] });
+            set({ logs: [info, ...get().logs] });
         }
     }
 })
