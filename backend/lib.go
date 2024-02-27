@@ -1,4 +1,4 @@
-package main
+package backend
 
 import (
 	"encoding/json"
@@ -13,45 +13,59 @@ import (
 
 // 配置文件格式
 type ConfigT struct {
+	// 启动器路径
 	LaunchPath string `json:"launch_path"`
-	GamePath   string `json:"game_path"`
-	Game       string `json:"game"`
+	// 游戏路径
+	GamePath string `json:"game_path"`
+	// 游戏路径 + 可执行文件
+	Game string `json:"game"`
 }
 
 type Lib struct {
 	Config      *ConfigT
 	Regs        []string
 	CurrentPath string
-	Log         func(...string)
+	Log         func(...any)
 	regKey      string
 }
 
 func (lib *Lib) Init() {
-	var exePath, _ = os.Executable()
-	lib.CurrentPath = filepath.Dir(exePath)
+
+	lib.CurrentPath = getProjectStorePath("genshin-switch")
+	lib.logInfo("lib.CurrentPath: ", lib.CurrentPath)
+
 	lib.regKey = "HKCU\\Software\\miHoYo\\原神"
 
 	lib.readConfig()
-	lib.readRegs()
-
+	lib.ReadRegs()
 }
 
 // 读取配置文件
 func (lib *Lib) readConfig() {
 	// io/ioutil 包已弃用，不能再用ioutil
-	bytes, err := os.ReadFile(filepath.Join(lib.CurrentPath, "./config.json"))
+	lib.Config = &ConfigT{}
+	bytes, err := os.ReadFile(filepath.Join(lib.CurrentPath, "config.json"))
 	if err != nil {
 		lib.logInfo("读取配置文件出错 %+v", err)
 		return
 	}
-	result := &ConfigT{}
 
-	err = json.Unmarshal(bytes, result)
+	err = json.Unmarshal(bytes, lib.Config)
 	if err != nil {
 		lib.logInfo("解码json数据时出错")
 		return
 	}
-	lib.Config = result
+
+}
+
+// 设置游戏可执行路径
+func (lib *Lib) SetGameFile(gameFile string) {
+	if gameFile == "" {
+		return
+	}
+	lib.Config.Game = gameFile
+	lib.Config.GamePath = filepath.Dir(gameFile)
+	lib.SaveConfig()
 }
 
 // 写入配置文件
@@ -72,17 +86,23 @@ func (lib *Lib) SaveConfig() {
 }
 
 // 获取注册表列表
-func (lib *Lib) readRegs() {
-	matchs, err := filepath.Glob(filepath.Join(lib.CurrentPath, "./reg/*.reg"))
+func (lib *Lib) ReadRegs() {
+
+	match, err := filepath.Glob(filepath.Join(lib.CurrentPath, "./*.reg"))
+	lib.Regs = make([]string, len(match))
 	if err != nil {
 		lib.logInfo("读取注册表文件出错", err)
+		return
 	}
-	lib.Regs = matchs
+	for i, v := range match {
+		lib.Regs[i] = filepath.Base(v)
+	}
+
 }
 
 // 导出注册表到
 func (lib *Lib) Export(file string) {
-	err := lib.RunCommand("reg", "export", lib.regKey, file, "/y")
+	err := lib.runCommand("reg", "export", lib.regKey, filepath.Join(lib.CurrentPath, file), "/y")
 	if err != nil {
 		lib.logInfo("导出注册表失败", err)
 	} else {
@@ -116,7 +136,7 @@ func (lib *Lib) serverConfig(serverName byte) {
 	// 读取 INI 文件
 	cfg, err := ini.Load(gameConfigPath)
 	if err != nil {
-		lib.logInfo("无法读取 INI 文件：%v\n", err)
+		lib.logInfo("读取游戏配置文件失败：%v\n", err)
 		return
 	}
 
@@ -134,17 +154,18 @@ func (lib *Lib) serverConfig(serverName byte) {
 
 	// 配置文件与将要写入的内容没有不同，则直接返回
 	if !hasDiff {
+		lib.logInfo("游戏配置文件不需要更新")
 		return
 	}
 
 	// 保存 INI 文件
 	err = cfg.SaveTo(gameConfigPath)
 	if err != nil {
-		lib.logInfo("无法保存 INI 文件：%v\n", err)
+		lib.logInfo("保存游戏配置文件失败：%v\n", err)
 		return
 	}
 
-	lib.logInfo(gameConfigPath, "已更新并保存成功")
+	lib.logInfo(gameConfigPath, "已更新并保存游戏配置文件")
 }
 
 // 流程处理
@@ -154,7 +175,7 @@ func (lib *Lib) ChangeAccount(reg string) {
 	lib.serverConfig(server)
 
 	// 执行注册表导入
-	err := lib.RunCommand("reg", "import", reg)
+	err := lib.runCommand("reg", "import", filepath.Join(lib.CurrentPath, reg))
 	if err != nil {
 		lib.logInfo("导入注册表失败", err)
 	} else {
@@ -166,14 +187,17 @@ func (lib *Lib) ChangeAccount(reg string) {
 // 目标为 B 服时如果游戏目录下没有SDK则拷贝SDK，为官服时若游戏目录下有 SDK 则删除
 func (lib *Lib) cpBiliBiliSDK(remove bool) {
 	// 将sdk移动到对应位置， 此sdk为b服专有
-	sourcePath := filepath.Join(lib.CurrentPath, "./source/PCGameSDK.dll")
-	targetPath := filepath.Join(lib.Config.GamePath, "YuanShen_Data", "Plugins", "PCGameSDK.dll")
+	sdkSourcePath := lib.CurrentPath
+	sdkFileName := "PCGameSDK.dll"
+	sourcePath := filepath.Join(sdkSourcePath, sdkFileName)
+	targetPath := filepath.Join(lib.Config.GamePath, "YuanShen_Data", "Plugins", sdkFileName)
 
 	// 判断文件是否存在
 	_, err := os.Stat(targetPath)
-	sdkHasExist := err == nil
+	sdkHasExist := os.IsExist(err)
 
 	if remove && sdkHasExist {
+		lib.logInfo("移除B服SDK文件")
 		os.Remove(targetPath)
 		return
 	}
@@ -183,16 +207,17 @@ func (lib *Lib) cpBiliBiliSDK(remove bool) {
 		content, err := os.ReadFile(sourcePath)
 		if err != nil {
 			// 读取错误处理
-			lib.logInfo("读取./source/PCGameSDK.dll SDK文件失败", err)
+			lib.logInfo("读取 PCGameSDK.dll 文件失败, 请将此文件移动到")
+			lib.logInfo("     " + sdkSourcePath)
 		}
 		err = os.WriteFile(targetPath, content, 0755)
 		if err != nil {
 			// 写文件出错处理
 			lib.logInfo("SDK 写入游戏目录失败", err)
 		}
-	}
 
-	lib.logInfo(targetPath)
+		lib.logInfo("B服SDK已复制")
+	}
 
 }
 
@@ -217,13 +242,15 @@ func (lib *Lib) StartGame() {
 		lib.logInfo("游戏启动失败", err)
 		return
 	}
+	// 释放资源
+	cmd.Process.Release()
 	// cmd.Wait()
 	lib.logInfo("游戏启动中")
 
 }
 
 // 运行命令
-func (lib *Lib) RunCommand(args ...string) error {
+func (lib *Lib) runCommand(args ...string) error {
 
 	cmd := exec.Command(args[0], args[1:]...)
 
@@ -232,4 +259,9 @@ func (lib *Lib) RunCommand(args ...string) error {
 
 	return cmd.Run()
 
+}
+
+func NewLib() *Lib {
+	lib := &Lib{}
+	return lib
 }

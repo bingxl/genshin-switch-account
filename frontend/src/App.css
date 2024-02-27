@@ -1,0 +1,33 @@
+.btn-s {
+    display: flex;
+    justify-content: space-between;
+}
+
+.btn-s button {
+    flex-grow: 1;
+}
+
+.log-btn {
+    display: flex;
+    justify-content: space-between;
+}
+
+.log-btn div {
+    border: 1px solid #000;
+    flex-grow: 1;
+    display: inline-flex;
+    justify-content: center;
+}
+
+.log-btn button {
+    flex-grow: 1;
+}
+
+.log {
+    border: 1px solid #ececec;
+    width: 100%;
+    min-height: 200px;
+    max-height: 400px;
+    overflow-y: scroll;
+    overflow-x: clip;
+}

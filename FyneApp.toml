@@ -1,8 +1,0 @@
-Website = "https://bingxl.cn"
-
-[Details]
-  Icon = "Icon.png"
-  Name = "GenshinSwitch"
-  ID = "cn.bingxl.app"
-  Version = "1.0.0"
-  Build = 43
