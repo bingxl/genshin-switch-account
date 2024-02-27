@@ -18,7 +18,7 @@ func main() {
 	err := wails.Run(&options.App{
 		Title:  "wails-test",
 		Width:  462,
-		Height: 857,
+		Height: 757,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
