@@ -2,6 +2,8 @@ name: pre-release
 
 on: 
     push:
+        branches:
+          - main
         tags:
             - "v*"
 jobs:
@@ -11,23 +13,22 @@ jobs:
 
         steps:
             - name: "checkout"
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
 
             - name: "set up node"
               uses: actions/setup-node@v2
               with:
                 node-version: "21.x"
+            - run: corepack enable pnpm
 
             - name: "setup golang"
-              uses: actions/setup-go@v2
+              uses: actions/setup-go@v5
               with:
-                go-version: "1.22"
+                go-version-file: "go.mod"
 
+            - run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
             - name: build
-              run: |
-                corepack prepare pnpm@latest --activate
-                go install github.com/wailsapp/wails/v2/cmd/wails@latest
-                wails build
+              run: wails build
 
             - name: install upx
               uses: svenstaro/upx-action@v2
