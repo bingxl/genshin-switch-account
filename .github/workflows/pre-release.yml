@@ -13,9 +13,6 @@ jobs:
             - name: "checkout"
               uses: actions/checkout@v3
 
-            - name: install upx
-              uses: svenstaro/upx-action@v2
-
             - name: "set up node"
               uses: actions/setup-node@v2
               with:
@@ -29,7 +26,13 @@ jobs:
             - name: build
               run: |
                 corepack prepare pnpm@latest --activate
-                wails build -upx
+                wails build
+
+            - name: install upx
+              uses: svenstaro/upx-action@v2
+              with:
+                files: build/bin/genshin-switch.exe
+
 
             - uses: "marvinpinto/action-automatic-releases@latest"
               with:
