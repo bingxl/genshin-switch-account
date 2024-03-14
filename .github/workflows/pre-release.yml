@@ -17,8 +17,8 @@ jobs:
               uses: actions/setup-node@v2
               with:
                 node-version: "21.x"
-                cache: "pnpm"
-                cache-dependency-path: "frontend/pnpm-lock.yaml"
+                # cache: "pnpm"
+                # cache-dependency-path: "frontend/pnpm-lock.yaml"
             - run: corepack enable pnpm
 
             - name: "setup golang"
