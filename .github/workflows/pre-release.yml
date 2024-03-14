@@ -19,12 +19,15 @@ jobs:
               uses: actions/setup-node@v2
               with:
                 node-version: "21.x"
+                cache: "pnpm"
+                cache-dependency-path: "frontend/pnpm-lock.yaml"
             - run: corepack enable pnpm
 
             - name: "setup golang"
               uses: actions/setup-go@v5
               with:
                 go-version-file: "go.mod"
+                cache-dependency-path: "go.sum"
 
             - run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
             - name: build
@@ -39,7 +42,6 @@ jobs:
             - uses: "marvinpinto/action-automatic-releases@latest"
               with:
                 repo_token: "${{ secrets.GITHUB_TOKEN }}"
-                automatic_release_tag: "latest"
                 prerelease: true
                 files: |
                     build/bin/genshin-switch.exe
