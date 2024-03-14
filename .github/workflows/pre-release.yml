@@ -1,0 +1,50 @@
+name: pre-release
+
+on: 
+    push:
+        tags:
+            - "v*"
+jobs:
+    prelease:
+        name: "pre release"
+        runs-on: windows-latest
+
+        steps:
+            - name: "checkout"
+              uses: actions/checkout@v3
+
+            - name: install upx
+              uses: svenstaro/upx-action@v2
+
+            - name: "set up node"
+              uses: actions/setup-node@v2
+              with:
+                node-version: "21.x"
+
+            - name: "setup golang"
+              uses: actions/setup-go@v2
+              with:
+                go-version: "1.22"
+
+            - name: build
+              run: |
+                corepack prepare pnpm@latest --activate
+                wails build -upx
+
+            - uses: "marvinpinto/action-automatic-releases@latest"
+              with:
+                repo_token: "${{ secrets.GITHUB_TOKEN }}"
+                automatic_release_tag: "latest"
+                prerelease: true
+                title: "Development Build"
+                files: |
+                    build/bin/genshin-switch.exe
+
+
+
+
+
+
+
+
+
