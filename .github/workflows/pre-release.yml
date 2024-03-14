@@ -26,6 +26,7 @@ jobs:
             - name: build
               run: |
                 corepack prepare pnpm@latest --activate
+                go install github.com/wailsapp/wails/v2/cmd/wails@latest
                 wails build
 
             - name: install upx
