@@ -103,7 +103,7 @@ func (lib *Lib) ReadRegs() {
 
 // 导出注册表到
 func (lib *Lib) Export(file string) {
-	err := lib.runCommand(append(regCmd, "export", lib.regKey, filepath.Join(lib.CurrentPath, file), "/y")...)
+	err := runCommand(append(regCmd, "export", lib.regKey, filepath.Join(lib.CurrentPath, file), "/y")...)
 	if err != nil {
 		lib.logInfo("导出注册表失败", err)
 	} else {
@@ -176,7 +176,7 @@ func (lib *Lib) ChangeAccount(reg string) {
 	lib.serverConfig(server)
 
 	// 执行注册表导入
-	err := lib.runCommand(append(regCmd, "import", filepath.Join(lib.CurrentPath, reg))...)
+	err := runCommand(append(regCmd, "import", filepath.Join(lib.CurrentPath, reg))...)
 	if err != nil {
 		lib.logInfo("导入注册表失败", err)
 	} else {
@@ -278,18 +278,6 @@ func (lib *Lib) StartGis(gisPath string) {
 		}
 
 	}()
-}
-
-// 运行命令
-func (lib *Lib) runCommand(args ...string) error {
-
-	cmd := exec.Command(args[0], args[1:]...)
-
-	// exe执行时会启动一个终端，不隐藏 Window 时会有终端闪现
-	RunInBack(cmd)
-
-	return cmd.Run()
-
 }
 
 func NewLib() *Lib {

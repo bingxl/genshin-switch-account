@@ -2,6 +2,7 @@ package backend
 
 import (
 	"os"
+	"os/exec"
 	"path"
 )
 
@@ -27,4 +28,14 @@ func getProjectStorePath(projectName string) string {
 func isExists(filenameOrDir string) bool {
 	_, err := os.Stat(filenameOrDir)
 	return os.IsExist(err)
+}
+
+// 运行命令
+func runCommand(args ...string) error {
+
+	cmd := exec.Command(args[0], args[1:]...)
+
+	// exe执行时会启动一个终端，不隐藏 Window 时会有终端闪现
+	RunInBack(cmd)
+	return cmd.Run()
 }

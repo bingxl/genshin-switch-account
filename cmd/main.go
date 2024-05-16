@@ -1,9 +1,11 @@
+// 编译为命令行模式
+
 package main
 
 import (
 	"fmt"
 	"genshin/backend"
-	"strings"
+	"strconv"
 )
 
 var lib = backend.NewLib()
@@ -11,21 +13,35 @@ var lib = backend.NewLib()
 func main() {
 	lib.Init()
 
-	fmt.Println(strings.Join(GetRegs(), "\n"))
-	fmt.Println("输入操作， i开头导入账号， e开头导出账号， q退出")
+	fmt.Println("索引\t", "账号")
+	for i, v := range GetRegs() {
+		fmt.Println(i, "\t", v)
+	}
+	fmt.Println("输入操作加索引， i开头导入账号， e开头导出账号， q退出")
+	fmt.Println("eg: i0 导入第一个账号，e0 导出第一个账号")
 
 	var input string
 
 	for {
 		fmt.Scanln(&input)
-		if input == "q" {
+		if input == "q" || input == "exit" {
 			break
 		}
-		if strings.HasPrefix(input, "i") {
-			ImportReg(input[1:] + ".reg")
-		} else if strings.HasPrefix(input, "e") {
-			ExportReg(input[1:] + ".reg")
+		operation := input[0]
+		accountIndex, err := strconv.Atoi(input[1:])
+		if err != nil || accountIndex >= len(GetRegs()) {
+			fmt.Println("无效索引")
+			continue
 		}
+		switch operation {
+		case 'i':
+			ImportReg(GetRegs()[accountIndex])
+		case 'e':
+			ExportReg(GetRegs()[accountIndex])
+		default:
+			fmt.Println("无效操作")
+		}
+
 	}
 }
 
