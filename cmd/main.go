@@ -13,19 +13,23 @@ var lib = backend.NewLib()
 func main() {
 	lib.Init()
 
-	fmt.Println("索引\t", "账号")
+	fmt.Println("索引  账号")
 	for i, v := range GetRegs() {
-		fmt.Println(i, "\t", v)
+		fmt.Println(i, "  ", v)
 	}
-	fmt.Println("输入操作加索引， i开头导入账号， e开头导出账号， q退出")
-	fmt.Println("eg: i0 导入第一个账号，e0 导出第一个账号")
+	fmt.Println("输入操作后按回车\n i+索引号  导入账号 eg: i0 \n e+索引号  导出账号 eg: e1 \n q  退出 \n s  启动游戏")
 
 	var input string
 
 	for {
 		fmt.Scanln(&input)
 		if input == "q" || input == "exit" {
+			lib.Close()
 			break
+		}
+		if input == "s" {
+			lib.StartGame()
+			continue
 		}
 		operation := input[0]
 		accountIndex, err := strconv.Atoi(input[1:])

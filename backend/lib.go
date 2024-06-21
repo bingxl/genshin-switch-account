@@ -238,13 +238,7 @@ func (lib *Lib) logInfo(args ...interface{}) {
 // 开始游戏
 func (lib *Lib) StartGame() {
 
-	if lib.gameCmd != nil && lib.gameCmd.Process != nil {
-		// 通过程序运行游戏,且游戏还未结束时 kill
-		lib.gameCmd.Process.Kill()
-		lib.logInfo("游戏还在运行,已发送关闭信号,等待游戏结束")
-		lib.gameCmd.Wait()
-	}
-
+	lib.endGame()
 	lib.gameCmd = exec.Command(lib.Config.Game)
 	lib.gameCmd.Dir = lib.Config.GamePath
 
@@ -257,17 +251,23 @@ func (lib *Lib) StartGame() {
 	lib.logInfo("游戏启动中")
 }
 
+func (lib *Lib) endGame() {
+	if lib.gameCmd != nil && lib.gameCmd.Process != nil {
+		// 通过程序运行游戏,且游戏还未结束时 kill
+		lib.gameCmd.Process.Kill()
+		lib.logInfo("游戏还在运行,已发送关闭信号,等待游戏结束")
+		lib.gameCmd.Wait()
+	}
+
+}
+
 // 运行GIS 时保存的 Cmd
 var gisCmd *exec.Cmd
 
 // 运行 GIS
 func (lib *Lib) StartGis(gisPath string) {
 	// gis 还在运行, kill 它
-	if gisCmd != nil && gisCmd.Process != nil {
-		gisCmd.Process.Kill()
-		lib.logInfo("等待 GIS 重启")
-		gisCmd.Wait()
-	}
+	lib.endGis()
 	go func() {
 		gisCmd = exec.Command(gisPath)
 		// 设置工作目录
@@ -279,8 +279,21 @@ func (lib *Lib) StartGis(gisPath string) {
 
 	}()
 }
+func (lib *Lib) endGis() {
+	if gisCmd != nil && gisCmd.Process != nil {
+		gisCmd.Process.Kill()
+		lib.logInfo("等待 GIS 重启")
+		gisCmd.Wait()
+	}
+}
 
 func NewLib() *Lib {
 	lib := &Lib{}
 	return lib
+}
+
+// 释放资源
+func (lib *Lib) Close() {
+	lib.endGame()
+	lib.endGame()
 }
