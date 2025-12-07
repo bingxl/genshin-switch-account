@@ -2,7 +2,6 @@ package backend
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -112,13 +111,13 @@ func (lib *Lib) Export(file string) {
 }
 
 // 更新游戏配置文件
-func (lib *Lib) serverConfig(serverName byte) {
+func (lib *Lib) ServerConfig(serverName byte) {
 	var modify [3]string
 	switch serverName {
 	case 'b':
 		modify = [3]string{"14", "bilibili", "0"}
 	case 'g':
-		modify = [3]string{"1", "mihoyo", "1"}
+		modify = [3]string{"1", "pcweb", "1"}
 
 	default:
 		lib.logInfo("暂不支持的server", serverName)
@@ -173,7 +172,7 @@ func (lib *Lib) serverConfig(serverName byte) {
 func (lib *Lib) ChangeAccount(reg string) {
 	lib.logInfo("changeAccount 接收到：", reg)
 	server := filepath.Base(reg)[0]
-	lib.serverConfig(server)
+	lib.ServerConfig(server)
 
 	// 执行注册表导入
 	err := runCommand(append(regCmd, "import", filepath.Join(lib.CurrentPath, reg))...)
@@ -259,32 +258,6 @@ func (lib *Lib) endGame() {
 		lib.gameCmd.Wait()
 	}
 
-}
-
-// 运行GIS 时保存的 Cmd
-var gisCmd *exec.Cmd
-
-// 运行 GIS
-func (lib *Lib) StartGis(gisPath string) {
-	// gis 还在运行, kill 它
-	lib.endGis()
-	go func() {
-		gisCmd = exec.Command(gisPath)
-		// 设置工作目录
-		gisCmd.Dir = filepath.Dir(gisPath)
-		err := gisCmd.Start()
-		if errors.Is(err, exec.ErrNotFound) {
-			lib.logInfo("GIS 未找到, 请确输入了正确的路径")
-		}
-
-	}()
-}
-func (lib *Lib) endGis() {
-	if gisCmd != nil && gisCmd.Process != nil {
-		gisCmd.Process.Kill()
-		lib.logInfo("等待 GIS 重启")
-		gisCmd.Wait()
-	}
 }
 
 func NewLib() *Lib {

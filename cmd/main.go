@@ -5,19 +5,14 @@ package main
 import (
 	"fmt"
 	"genshin/backend"
-	"strconv"
 )
 
 var lib = backend.NewLib()
 
 func main() {
 	lib.Init()
-
-	fmt.Println("索引  账号")
-	for i, v := range GetRegs() {
-		fmt.Println(i, "  ", v)
-	}
-	fmt.Println("输入操作后按回车\n i+索引号  导入账号 eg: i0 \n e+索引号  导出账号 eg: e1 \n q  退出 \n s  启动游戏")
+	fmt.Println("当前游戏路径: ", lib.Config.Game)
+	fmt.Println("输入操作后按回车\n g 切换官服 \n b 切换bilibili服 \n m path 修改游戏路径 eg: m D://xxxx/xx/Yuanshen.exe \n q  退出 \n s  启动游戏")
 
 	var input string
 
@@ -31,42 +26,19 @@ func main() {
 			lib.StartGame()
 			continue
 		}
-		operation := input[0]
-		accountIndex, err := strconv.Atoi(input[1:])
-		if err != nil || accountIndex >= len(GetRegs()) {
-			fmt.Println("无效索引")
+		if len(input) > 2 && input[0] == 'm' && input[1] == ' ' {
+			newPath := input[2:]
+			if newPath == "" {
+				fmt.Println("请输入有效路径")
+				continue
+			}
+			lib.SetGameFile(newPath)
+			fmt.Println("已修改游戏路径为: ", newPath)
 			continue
 		}
-		switch operation {
-		case 'i':
-			ImportReg(GetRegs()[accountIndex])
-		case 'e':
-			ExportReg(GetRegs()[accountIndex])
-		default:
-			fmt.Println("无效操作")
-		}
+		operation := input[0]
+
+		lib.ServerConfig(operation)
 
 	}
-}
-
-// 获取账号注册表文件
-func GetRegs() []string {
-	lib.ReadRegs()
-	return lib.Regs
-}
-
-// 将当前注册表内容导出到注册表文件
-func ExportReg(regName string) {
-	if regName == "" {
-		return
-	}
-	lib.Export(regName)
-}
-
-// 切换账号
-func ImportReg(regName string) {
-	if regName == "" {
-		return
-	}
-	lib.ChangeAccount(regName)
 }
