@@ -2,9 +2,9 @@
   "$schema": "https://wails.io/schemas/config.v2.json",
   "name": "genshin-switch",
   "outputfilename": "genshin-switch",
-  "frontend:install": "pnpm install",
-  "frontend:build": "pnpm build",
-  "frontend:dev:watcher": "pnpm dev",
+  "frontend:install": "bun install",
+  "frontend:build": "bun build",
+  "frontend:dev:watcher": "bun dev",
   "frontend:dev:serverUrl": "auto",
   "author": {
     "name": "bingxl",
